@@ -98,14 +98,23 @@
                       (rf/reg-cofx ::g (constantly {}))"
                      {:config {:output {:analysis {:keywords true}}}})]
       (assert-submaps
-       '[{:name "a" :reg re-frame.core/reg-event-db}
-         {:name "b" :reg re-frame.core/reg-event-fx}
-         {:name "c" :reg re-frame.core/reg-event-ctx}
-         {:name "d" :reg re-frame.core/reg-sub}
-         {:name "e" :reg re-frame.core/reg-sub-raw}
-         {:name "f" :reg re-frame.core/reg-fx}
-         {:name "g" :reg re-frame.core/reg-cofx}]
-       (:keywords a))))
+        '[{:name "a" :reg re-frame.core/reg-event-db}
+          {:name "b" :reg re-frame.core/reg-event-fx}
+          {:name "c" :reg re-frame.core/reg-event-ctx}
+          {:name "d" :reg re-frame.core/reg-sub}
+          {:name "e" :reg re-frame.core/reg-sub-raw}
+          {:name "f" :reg re-frame.core/reg-fx}
+          {:name "g" :reg re-frame.core/reg-cofx}]
+        (:keywords a))))
+  (testing "calls in re-frame.core/reg-event-db body register reg"
+    (let [a (analyze "(require '[re-frame.core :as rf])
+                      (rf/reg-event-db ::a (constantly {}))"
+                     {:config {:output {:analysis {:keywords true}}}})]
+      (assert-submaps
+       '[{:name require}
+         {:name constantly :from-var :a :reg re-frame.core/reg-event-db}
+         {:name reg-event-db}]
+        (:var-usages a))))
   (testing ":lint-as re-frame.core function will add :reg with the source full qualified ns"
     (let [a (analyze "(user/mydef ::kw (constantly {}))"
                      {:config {:output {:analysis {:keywords true}}

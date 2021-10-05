@@ -29,7 +29,8 @@
                                :name-end-row
                                :name-end-col
                                :end-row
-                               :end-col]))
+                               :end-col
+                               :reg]))
                 :arity arity
                 :lang lang
                 :from-var in-def))))))

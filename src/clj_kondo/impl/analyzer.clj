@@ -1894,6 +1894,7 @@
                 (if (= 'ns resolved-as-clojure-var-name)
                   analyzed
                   (let [in-def (:in-def ctx)
+                        in-reg (:in-reg ctx)
                         id (:id expr)
                         m (meta analyzed)
                         proto-call {:type :call
@@ -1927,6 +1928,7 @@
                         call (cond-> proto-call
                                id (assoc :id id)
                                in-def (assoc :in-def in-def)
+                               in-reg (assoc :in-reg in-reg)
                                ret-tag (assoc :ret ret-tag))]
                     (when id (reg-call ctx call id))
                     (namespace/reg-var-usage! ctx ns-name call)
