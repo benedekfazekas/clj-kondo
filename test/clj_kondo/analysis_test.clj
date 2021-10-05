@@ -114,7 +114,34 @@
        '[{:name require}
          {:name constantly :from-var :a :reg re-frame.core/reg-event-db}
          {:name reg-event-db}]
-        (:var-usages a))))
+       (:var-usages a))))
+  (testing "keyword usages records from-var from-ns"
+    (let [a (analyze "(ns foo (:require [re-frame.core :as rf]))
+                      (rf/reg-sub :a (constantly {}))
+
+                      (ns bar (:require [re-frame.core :as rf]))
+                      (rf/reg-sub :b :<- [:a] (fn [a _] a))
+                      (defn foo-a [] @(rf/subscribe [:a]))"
+                     {:config {:output {:analysis {:keywords true}}}})]
+      (assert-submaps
+       '[{:name "a"
+          :from-ns foo}
+         {:name "b"
+          :from-ns bar}
+         {:name "<-"
+          :from-var :b
+          :from-ns bar
+          :from-reg re-frame.core/reg-sub}
+         {:name "a"
+          :from-var :b
+          :from-ns bar
+          :from-reg re-frame.core/reg-sub}
+         {:name "a"
+          :from-var foo-a
+          :from-ns bar}]
+       (:keywords a))
+      (is (not (:from-var (second (:keywords a)))))
+      (is (every? (comp not :from-reg) (take 2 (:keywords a))))))
   (testing ":lint-as re-frame.core function will add :reg with the source full qualified ns"
     (let [a (analyze "(user/mydef ::kw (constantly {}))"
                      {:config {:output {:analysis {:keywords true}}
@@ -163,14 +190,14 @@
     (testing "no namespace for key :a"
       (let [a (analyze "#:xml{:_/a 1}"
                        {:config {:output {:analysis {:keywords true}}}})]
-        (is (= '[{:row 1, :col 7, :end-row 1, :end-col 11, :name "a", :filename "<stdin>"}]
+        (is (= '[{:row 1, :col 7, :end-row 1, :end-col 11, :name "a", :filename "<stdin>" :from-ns user}]
                (:keywords a)))))
     ;; Don't use assertmap here to make sure ns is absent
     (testing "no namespace for key :b"
       (let [a (analyze "#:xml{:a {:b 1}}"
                        {:config {:output {:analysis {:keywords true}}}})]
-        (is (= '[{:row 1, :col 7, :end-row 1, :end-col 9, :ns xml, :name "a", :filename "<stdin>" :namespace-from-prefix true}
-                 {:row 1, :col 11, :end-row 1, :end-col 13, :name "b", :filename "<stdin>"}]
+        (is (= '[{:row 1, :col 7, :end-row 1, :end-col 9, :ns xml, :name "a", :filename "<stdin>" :namespace-from-prefix true :from-ns user}
+                 {:row 1, :col 11, :end-row 1, :end-col 13, :name "b", :filename "<stdin>" :from-ns user}]
                (:keywords a)))))
     (testing "auto-resolved and namespace-from-prefix"
       (let [a (analyze "(ns foo (:require [clojure.set :as set]))
@@ -179,18 +206,18 @@
                         {:j/k 5 :l 6 ::m 7}
                         #::set{:a 1}"
                        {:config {:output {:analysis {:keywords true}}}})]
-        (is (= '[{:row 2 :col 25 :end-row 2 :end-col 27 :name "a" :filename "<stdin>"}
-                 {:row 2 :col 28 :end-row 2 :end-col 31 :ns foo :auto-resolved true :name "b" :filename "<stdin>"}
-                 {:row 2 :col 32 :end-row 2 :end-col 38 :ns bar :name "c" :filename "<stdin>"}
-                 {:row 3 :col 29 :end-row 3 :end-col 31 :ns d :namespace-from-prefix true :name "e" :filename "<stdin>"}
-                 {:row 3 :col 34 :end-row 3 :end-col 38 :name "f" :filename "<stdin>"}
-                 {:row 3 :col 41 :end-row 3 :end-col 45 :ns g :name "h" :filename "<stdin>"}
-                 {:row 3 :col 48 :end-row 3 :end-col 51 :ns foo :auto-resolved true :name "i" :filename "<stdin>"}
-                 {:row 4 :col 26 :end-row 4 :end-col 30 :ns j :name "k" :filename "<stdin>"}
-                 {:row 4 :col 33 :end-row 4 :end-col 35 :name "l" :filename "<stdin>"}
-                 {:row 4 :col 38 :end-row 4 :end-col 41 :ns foo :auto-resolved true :name "m" :filename "<stdin>"}
+        (is (= '[{:row 2 :col 25 :end-row 2 :end-col 27 :name "a" :filename "<stdin>" :from-ns foo}
+                 {:row 2 :col 28 :end-row 2 :end-col 31 :ns foo :auto-resolved true :name "b" :filename "<stdin>" :from-ns foo}
+                 {:row 2 :col 32 :end-row 2 :end-col 38 :ns bar :name "c" :filename "<stdin>" :from-ns foo}
+                 {:row 3 :col 29 :end-row 3 :end-col 31 :ns d :namespace-from-prefix true :name "e" :filename "<stdin>" :from-ns foo}
+                 {:row 3 :col 34 :end-row 3 :end-col 38 :name "f" :filename "<stdin>" :from-ns foo}
+                 {:row 3 :col 41 :end-row 3 :end-col 45 :ns g :name "h" :filename "<stdin>" :from-ns foo}
+                 {:row 3 :col 48 :end-row 3 :end-col 51 :ns foo :auto-resolved true :name "i" :filename "<stdin>" :from-ns foo}
+                 {:row 4 :col 26 :end-row 4 :end-col 30 :ns j :name "k" :filename "<stdin>" :from-ns foo}
+                 {:row 4 :col 33 :end-row 4 :end-col 35 :name "l" :filename "<stdin>" :from-ns foo}
+                 {:row 4 :col 38 :end-row 4 :end-col 41 :ns foo :auto-resolved true :name "m" :filename "<stdin>"  :from-ns foo}
                  {:row 5, :col 32, :end-row 5, :end-col 34, :ns clojure.set, :namespace-from-prefix true,
-                  :name "a", :filename "<stdin>"}]
+                  :name "a", :filename "<stdin>" :from-ns foo}]
                (:keywords a)))))))
 
 (deftest locals-analysis-test

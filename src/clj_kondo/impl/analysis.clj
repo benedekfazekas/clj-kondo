@@ -113,4 +113,7 @@
              (assoc-some (select-keys usage [:row :col :end-row :end-col :alias :ns :keys-destructuring :reg :auto-resolved :namespace-from-prefix])
                          :name (name (:name usage))
                          :filename filename
-                         :lang (when (= :cljc (:base-lang ctx)) (:lang ctx)))))))
+                         :lang (when (= :cljc (:base-lang ctx)) (:lang ctx))
+                         :from-reg (when (not (:reg usage)) (get-in ctx [:in-reg :reg]))
+                         :from-var (or (:in-def ctx) (when (not (:reg usage)) (:k (:in-reg ctx))))
+                         :from-ns (get-in ctx [:ns :name]))))))
