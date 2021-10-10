@@ -115,5 +115,5 @@
                          :filename filename
                          :lang (when (= :cljc (:base-lang ctx)) (:lang ctx))
                          :from-reg (when (not (:reg usage)) (get-in ctx [:in-reg :reg]))
-                         :from-var (or (:in-def ctx) (when (not (:reg usage)) (:k (:in-reg ctx))))
+                         :from-var (or (:in-def ctx) (when-let [k (and (not (:reg usage)) (:k (:in-reg ctx)))] (name k)))
                          :from-ns (get-in ctx [:ns :name]))))))

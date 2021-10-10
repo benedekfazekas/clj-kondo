@@ -111,10 +111,10 @@
                       (rf/reg-event-db ::a (constantly {}))"
                      {:config {:output {:analysis {:keywords true}}}})]
       (assert-submaps
-       '[{:name require}
-         {:name constantly :from-var :a :reg re-frame.core/reg-event-db}
-         {:name reg-event-db}]
-       (:var-usages a))))
+        '[{:name require}
+          {:name constantly :from-var "a" :reg re-frame.core/reg-event-db}
+          {:name reg-event-db}]
+        (:var-usages a))))
   (testing "keyword usages records from-var from-ns"
     (let [a (analyze "(ns foo (:require [re-frame.core :as rf]))
                       (rf/reg-sub :a (constantly {}))
@@ -124,24 +124,39 @@
                       (defn foo-a [] @(rf/subscribe [:a]))"
                      {:config {:output {:analysis {:keywords true}}}})]
       (assert-submaps
-       '[{:name "a"
-          :from-ns foo}
-         {:name "b"
-          :from-ns bar}
-         {:name "<-"
-          :from-var :b
-          :from-ns bar
-          :from-reg re-frame.core/reg-sub}
-         {:name "a"
-          :from-var :b
-          :from-ns bar
-          :from-reg re-frame.core/reg-sub}
-         {:name "a"
-          :from-var foo-a
-          :from-ns bar}]
-       (:keywords a))
+        '[{:name "a"
+           :from-ns foo}
+          {:name "b"
+           :from-ns bar}
+          {:name "<-"
+           :from-var "b"
+           :from-ns bar
+           :from-reg re-frame.core/reg-sub}
+          {:name "a"
+           :from-var "b"
+           :from-ns bar
+           :from-reg re-frame.core/reg-sub}
+          {:name "a"
+           :from-var foo-a
+           :from-ns bar}]
+        (:keywords a))
       (is (not (:from-var (second (:keywords a)))))
       (is (every? (comp not :from-reg) (take 2 (:keywords a))))))
+  (testing "keyword usages indifferent of order"
+    (let [a (analyze "(ns foo (:require [re-frame.core :as rf]))
+                      (rf/reg-sub :b :<- [:a] (fn [a _] a))
+                      (rf/reg-sub :a (constantly {}))"
+                     {:config {:output {:analysis {:keywords true}}}})]
+      (assert-submaps
+        '[{:name "b"}
+          {:name "<-"
+           :from-var "b"
+           :from-reg re-frame.core/reg-sub}
+          {:name "a"
+           :from-var "b"
+           :from-reg re-frame.core/reg-sub}
+          {:name "a"}]
+        (:keywords a))))
   (testing ":lint-as re-frame.core function will add :reg with the source full qualified ns"
     (let [a (analyze "(user/mydef ::kw (constantly {}))"
                      {:config {:output {:analysis {:keywords true}}

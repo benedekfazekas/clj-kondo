@@ -309,7 +309,7 @@
                                            resolved-ns fn-name arity
                                            (when (= :cljc base-lang)
                                              call-lang)
-                                           (or in-def (:k in-reg))
+                                           (or in-def (when-let [k (:k in-reg)] (name k)))
                                            (assoc called-fn
                                                   :reg (:reg in-reg)
                                                   :alias (:alias call)
