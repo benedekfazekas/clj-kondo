@@ -106,14 +106,15 @@
                        :lang (when (= :cljc (:base-lang ctx)) (:lang ctx))
                        :id (:id binding)))))
 
-(defn reg-keyword-usage! [ctx filename usage]
+(defn reg-keyword-usage! [{:keys [in-subs in-disp] :as ctx} filename usage]
   (when (:analyze-keywords? ctx)
     (when-let [analysis (:analysis ctx)]
+      (println "usage" usage "in-reg" (:in-reg ctx) "in-subs" in-subs "in-disp" in-disp)
       (swap! analysis update :keywords conj
              (assoc-some (select-keys usage [:row :col :end-row :end-col :alias :ns :keys-destructuring :reg :auto-resolved :namespace-from-prefix])
                          :name (name (:name usage))
                          :filename filename
                          :lang (when (= :cljc (:base-lang ctx)) (:lang ctx))
-                         :from-reg (when (not (:reg usage)) (get-in ctx [:in-reg :reg]))
-                         :from-var (or (:in-def ctx) (when-let [k (and (not (:reg usage)) (:k (:in-reg ctx)))] (name k)))
+                         :from-reg (and (or in-subs in-disp) (when (not (:reg usage)) (get-in ctx [:in-reg :reg])))
+                         :from-var (and (or in-subs in-disp) (or (:in-def ctx) (when-let [k (and (not (:reg usage)) (:k (:in-reg ctx)))] (name k))))
                          :from-ns (get-in ctx [:ns :name]))))))

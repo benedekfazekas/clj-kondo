@@ -1594,9 +1594,9 @@
           :else
           (let [[resolved-as-namespace resolved-as-name _lint-as?]
                 (or (when-let
-                        [[ns n]
-                         (config/lint-as config
-                                         [resolved-namespace resolved-name])]
+                     [[ns n]
+                      (config/lint-as config
+                                      [resolved-namespace resolved-name])]
                       [ns n true])
                     [resolved-namespace resolved-name false])
                 ;; See #1170, we deliberaly use resolved and not resolved-as
@@ -1823,7 +1823,7 @@
                         [potemkin import-vars]
                         (potemkin/analyze-import-vars ctx expr)
                         ([clojure.core.async alt!] [clojure.core.async alt!!]
-                         [cljs.core.async alt!] [cljs.core.async alt!!])
+                                                   [cljs.core.async alt!] [cljs.core.async alt!!])
                         (core-async/analyze-alt! (assoc ctx
                                                         :analyze-expression** analyze-expression**
                                                         :extract-bindings extract-bindings)
@@ -1873,13 +1873,20 @@
                         [babashka.process $]
                         (babashka/analyze-$ ctx expr)
                         ([re-frame.core reg-event-db]
-                         [re-frame.core reg-event-fx]
                          [re-frame.core reg-event-ctx]
-                         [re-frame.core reg-sub]
                          [re-frame.core reg-sub-raw]
                          [re-frame.core reg-fx]
                          [re-frame.core reg-cofx])
                         (re-frame/analyze-reg ctx expr (symbol (str resolved-namespace) (str resolved-name)))
+                        ([re-frame.core reg-sub])
+                        (re-frame/analyze-reg-sub ctx expr (symbol (str resolved-namespace) (str resolved-name)))
+                        ([re-frame.core subscribe])
+                        (re-frame/analyze-subscribe ctx (next (:children expr)))
+                        ([re-frame.core dispatch]
+                         [re-frame.core dispatch-sync])
+                        (re-frame/analyze-dispatch ctx (next (:children expr)))
+                        ([re-frame.core reg-event-fx])
+                        (re-frame/analyze-reg-event-fx ctx expr (symbol (str resolved-namespace) (str resolved-name)))
                         ;; catch-all
                         (let [next-ctx (cond-> ctx
                                          (one-of [resolved-namespace resolved-name]
